@@ -227,8 +227,8 @@ const mollyJS = function( front_path, back_path ){
 	
 //TODO: Main Functions  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 let server = new mollyJS( `${__dirname}/www`, `${__dirname}/controller` );
-//	server.createSecureServer( process.env.HTTPSPORT, process.env.KEY, process.env.CERT );
-	server.createServer( process.env.HTTPPORT );
+//	server.createSecureServer( process.env.PORT, process.env.KEY, process.env.CERT );
+	server.createServer( process.env.PORT );
 
 
 
