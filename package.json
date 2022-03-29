@@ -10,10 +10,11 @@
   	"keywords": [],
   	"author": "Enmanuel Becerra",
   	"dependencies": {
+  	  	"url": "^0.11.0",
+  	  	"http2": "^3.3.7",
   	  	"axios": "^0.26.1",
   	  	"dotenv": "^16.0.0",
   	  	"fs": "^0.0.1-security",
-  	  	"http": "^0.0.1-security",
-  	  	"url": "^0.11.0"
+  	  	"http": "^0.0.1-security"
   	}
 }

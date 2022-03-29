@@ -208,8 +208,8 @@ const mollyJS = function( front_path, back_path ){
 		}); server.setTimeout( mollyJS.timeout );
 	}
 	
-	mollyJS.createSecureServer = function( Port, privatekey, certkey ){
-		const ssl_key = { key: privatekey, cert: certkey };	
+	mollyJS.createSecureServer = function( Port ){
+		const ssl_key = { key: process.env.KEY, cert: process.env.CERT };	
 		const server = https.createSecureServer( ssl_key, mollyJS.router ).listen( Port,'0.0.0.0',()=>{
 			console.log(`server started at https://localhost:${Port}`);
 		}); server.setTimeout( mollyJS.timeout );
@@ -227,7 +227,7 @@ const mollyJS = function( front_path, back_path ){
 	
 //TODO: Main Functions  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 let server = new mollyJS( `${__dirname}/www`, `${__dirname}/controller` );
-//	server.createSecureServer( process.env.PORT, process.env.KEY, process.env.CERT );
+//	server.createSecureServer( process.env.PORT );
 	server.createServer( process.env.PORT );
 
 
