@@ -2,6 +2,8 @@
 
 //TODO: Libreries   XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 
+require('dotenv').config();
+
 const axios = require('axios');
 const https = require('http2');
 const http = require('http');
@@ -79,9 +81,8 @@ const mimeType = {
 
 //TODO: Main Class  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 
-const mollyJS = function( Port, front_path, back_path ){
+const mollyJS = function( front_path, back_path ){
 	const mollyJS = {
-		port: process.env.PORT || Port,
 		keys: Object.keys( mimeType ),
 		max_age: 1000 * 60 * 60 * 24,
 		timeout: 1000 * 60 * 10,
@@ -201,17 +202,17 @@ const mollyJS = function( Port, front_path, back_path ){
 		}
 	}
 	
-	mollyJS.createServer = function( privatekey="", certkey="" ){
-		if( privatekey!="" && certkey!="" ){
-			const ssl_key = { key: privatekey, cert: certkey };	
-			const server = https.createSecureServer( ssl_key, mollyJS.router ).listen( mollyJS.port,'0.0.0.0',()=>{
-				console.log(`server started at https://localhost:${mollyJS.port}`);
-			}); server.setTimeout( mollyJS.timeout );
-		} else {
-			const server = http.createServer( mollyJS.router ).listen( mollyJS.port,'0.0.0.0',()=>{
-				console.log(`server started at http://localhost:${mollyJS.port}`);
-			}); server.setTimeout( mollyJS.timeout );
-		}
+	mollyJS.createServer = function( Port ){
+		const server = http.createServer( mollyJS.router ).listen( Port,'0.0.0.0',()=>{
+			console.log(`server started at http://localhost:${Port}`);
+		}); server.setTimeout( mollyJS.timeout );
+	}
+	
+	mollyJS.createSecureServer = function( Port, privatekey, certkey ){
+		const ssl_key = { key: privatekey, cert: certkey };	
+		const server = https.createSecureServer( ssl_key, mollyJS.router ).listen( Port,'0.0.0.0',()=>{
+			console.log(`server started at https://localhost:${Port}`);
+		}); server.setTimeout( mollyJS.timeout );
 	}
 	
 	mollyJS._404_ = function(){ 
@@ -225,8 +226,9 @@ const mollyJS = function( Port, front_path, back_path ){
 };
 	
 //TODO: Main Functions  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
-server = new mollyJS( 3000, './www', './controller' );
-server.createServer();
+let server = new mollyJS( `${__dirname}/www`, `${__dirname}/controller` );
+//	server.createSecureServer( process.env.HTTPSPORT, process.env.KEY, process.env.CERT );
+	server.createServer( process.env.HTTPPORT );
 
 
 
