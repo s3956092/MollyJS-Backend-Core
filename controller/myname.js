@@ -1,7 +1,6 @@
 
 req.get( ()=>{
-	res.writeHead( 200, {'Content-Type':'text/html'} );
-	res.end( `,and this is my name is ${req.query.name} using GET` );
+	res.send( 200,`,and this is my name is ${req.query.name} using GET`  );
 });
 
 req.post( ()=>{
@@ -13,18 +12,15 @@ req.post( ()=>{
 	
 	req.on('end',()=>{
 		console.log( chunk )
-		res.writeHead( 200, {'Content-Type':'text/html'} );
-		res.end( `,and this is my name is ${req.query.name} using POST` );	
+		res.send( 200,`,and this is my name is ${req.query.name} using POST`  );
 	})
 
 });
 
 req.delete( ()=>{
-	res.writeHead( 200, {'Content-Type':'text/html'} );
-	res.end( `,and this is my name is ${req.query.name} using DELETE` );
+	res.send( 200,`,and this is my name is ${req.query.name} using DELETE`  );
 });
 
 req.put( ()=>{
-	res.writeHead( 200, {'Content-Type':'text/html'} );
-	res.end( `,and this is my name is ${req.query.name} using PUT` );
+	res.send( 200,`,and this is my name is ${req.query.name} using PUT`  );
 });
