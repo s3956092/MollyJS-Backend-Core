@@ -2,8 +2,6 @@
 
 //TODO: Libreries   XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 
-require('dotenv').config();
-
 const axios = require('axios');
 const https = require('http2');
 const http = require('http');
@@ -17,7 +15,7 @@ const mimeType = {
 	"otf" : "font/otf",
 	"ttf" : "font/ttf",
 	"woff": "font/woff",
-	"woff2": "font/woff2",
+	"woff2":"font/woff2",
 	
 	//TODO: Audio Mimetype //
 	"oga" : "audio/ogg",
@@ -130,15 +128,21 @@ const mollyJS = function( front_path, back_path ){
 	
 	mollyJS.router = function( req,res ){
 		
-		//TODO: Res Api XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX//
+		//TODO: Res Api XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 		
 		req.parse = url.parse(req.url, true);
 		req.query = req.parse.query;
 		
+		//TODO: MollyJS API XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
+		req.delete = ( callback )=>{ if( req.method === 'DELETE' ) callback( req,res ); }
+		req.post = ( callback )=>{ if( req.method === 'POST' ) callback( req,res ); }		
+		req.get = ( callback )=>{ if( req.method === 'GET' ) callback( req,res ); }
+		req.put = ( callback )=>{ if( req.method === 'PUT' ) callback( req,res ); }
+		
 		res.send = ( status, data, mimetype='text/html' )=>{
 			res.writeHead(status, mollyJS.header(mimetype));
 			res.end( data ); return 0;
-		}		
+		}
 		
 		//TODO: _main_ Function  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX//
 		try{
@@ -153,6 +157,12 @@ const mollyJS = function( front_path, back_path ){
 				return res.send( 200,data ); 
 			});
 			
+		} else if( req.parse.pathname=="/_api" ) {
+			fs.readFile(`${__dirname}/package.json`, (err,data)=>{
+				if (err) { return res.send( 404, mollyJS._404_() ); }
+				return res.send( 200,data ); 
+			});
+			
 		} else if( fs.existsSync(`${mollyJS.front}${req.parse.pathname}.html`) ) {
 			const data = fs.readFileSync(`${mollyJS.front}${req.parse.pathname}.html`);
 			return res.send( 200,data ); 
@@ -162,7 +172,6 @@ const mollyJS = function( front_path, back_path ){
 			eval(` try{ ${data} } catch(err) { console.log( err );
 				res.send( 404, 'something went wrong' );
 			}`);return 0;
-		
 		}
 	
 		//TODO: Server Chunk XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX//
@@ -226,9 +235,12 @@ const mollyJS = function( front_path, back_path ){
 };
 	
 //TODO: Main Functions  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
+
+require('dotenv').config();
+
 let server = new mollyJS( `${__dirname}/www`, `${__dirname}/controller` );
-//	server.createSecureServer( process.env.PORT );
-	server.createServer( process.env.PORT );
+//	server.createSecureServer( process.env.PORT || 3000 );
+	server.createServer( process.env.PORT || 3000 );
 
 
 

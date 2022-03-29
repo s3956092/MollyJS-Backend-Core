@@ -2,7 +2,7 @@ $ = (...args)=>{ return document.querySelector(args) }
 
 window.addEventListener( 'load',()=>{
 	
-	fetch( 'myname?name=enmanuel' )
+	fetch( 'myname?name=enmanuel',{ method:'PUT', body:'hola mundo mira mi pagina web: https://www.xshorts.ml' } )
 	.then( async(response)=>{
 		$('h1').innerHTML += await response.text();
 	})
