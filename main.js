@@ -2,6 +2,7 @@
 
 //TODO: Libreries   XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 
+const formidable = require('formidable');
 const axios = require('axios');
 const https = require('http2');
 const http = require('http');
@@ -37,7 +38,6 @@ const mimeType = {
 	"css" : "text/css",
 	"csv" : "text/csv",
 	"html": "text/html",
-	"jsx" : "text/plain",
 	"ics" : "text/calendar",
 	"js"  : "text/javascript",
 	"xml" : "application/xhtml+xml",
@@ -62,6 +62,10 @@ const mimeType = {
 	"7z"  : "application/x-7z-compressed",
 	"m3u8": "application/vnd.apple.mpegurl",
 	
+	//TODO: Text Plain Mimetype //
+	"txt" : "text/plain",
+	"text": "text/plain",
+	
 	//TODO: Document Mimetype //	
 	"pdf" : "application/pdf",	
 	"doc" : "application/msword",
@@ -84,6 +88,7 @@ const mollyJS = function( front_path, back_path ){
 		keys: Object.keys( mimeType ),
 		max_age: 1000 * 60 * 60 * 24,
 		timeout: 1000 * 60 * 10,
+		mimetype: mimeType,
 		front: front_path,
 		back: back_path,
 	};
@@ -101,21 +106,23 @@ const mollyJS = function( front_path, back_path ){
 		}	return str.toLowerCase();
 	}
 	
-	mollyJS.header = function( mimeType="text/plain",size=0 ){
+	mollyJS.header = function( mimeType,size=0 ){
 		const header = {
 			"Content-Security-Policy-Reporn-Only": "default-src 'self'; font-src 'self'; img-src 'self'; frame-src 'self';",
+		//	"Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
 			"Strict-Transport-Security": `max-age=${mollyJS.max_age}; preload`,
 		//	"Cache-Control": `public, max-age=${mollyJS.max_age}`,
-		//	"Access-Control-Allow-Origin":'*',
-			"Content-Type":mimeType 
+		//	"Access-Control-Allow-Origin":"*",
+			"Content-Type":mimeType,
 		};	if( size ) header['Content-Length'] = size;
 		return header;
 	}
 
-	mollyJS.chunkheader = function( start,end,size,mimeType="text/plain" ){
+	mollyJS.chunkheader = function( mimeType,start,end,size ){
 		const contentLength = end-start+1;
 		return {
 			"Content-Security-Policy-Reporn-Only": "default-src 'self'; font-src 'self'; img-src 'self'; frame-src 'self';",
+		//	"Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
 			"Strict-Transport-Security": `max-age=${mollyJS.max_age}; preload`,
 			"Cache-Control": `public, max-age=${mollyJS.max_age}`,
 			"Content-Range":`bytes ${start}-${end}/${size}`,
@@ -123,74 +130,123 @@ const mollyJS = function( front_path, back_path ){
 			"Content-Length":contentLength,
 			"Content-Type": mimeType,
 			"Accept-Ranges":"bytes",
+			
 		};
 	}
 	
 	mollyJS.router = function( req,res ){
 		
-		//TODO: Res Api XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
+		//TODO: Req DOC XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
 		
 		req.parse = url.parse(req.url, true);
-		req.query = req.parse.query;
+		req.query = req.parse.query; 
 		
-		//TODO: MollyJS API XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //
-		req.delete = ( callback )=>{ if( req.method === 'DELETE' ) callback( req,res ); }
-		req.post = ( callback )=>{ if( req.method === 'POST' ) callback( req,res ); }		
+		req.parse.method = req.method;
+		req.parse.host = req.headers['host'];
+		req.parse.hostname = req.headers['host'];
+		req.parse.origin = req.headers['origin'];
+		req.parse.ip = req.headers['x-forwarded-for'];
+		req.parse.protocol = req.headers['x-forwarded-proto'];
+		req.parse.params = req.parse.pathname.split('/').splice(1);
+		
+		//TODO: MollyJS DOC XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX //	
 		req.get = ( callback )=>{ if( req.method === 'GET' ) callback( req,res ); }
 		req.put = ( callback )=>{ if( req.method === 'PUT' ) callback( req,res ); }
+		req.post = ( callback )=>{ if( req.method === 'POST' ) callback( req,res ); }	
+		req.delete = ( callback )=>{ if( req.method === 'DELETE' ) callback( req,res ); }
 		
-		res.send = ( status, data, mimetype='text/html' )=>{
-			res.writeHead(status, mollyJS.header(mimetype));
-			res.end( data ); return 0;
+		req.form = ( callback )=>{
+			const form = new formidable.IncomingForm();
+			form.parse(req, (err,fields,files)=>{
+				const data = { fields:fields, files:files }
+				if( err ) res.send(404,'');
+				callback( data );
+			});
+		}
+		
+		req.saveFile = (_file,_path)=>{	
+			fs.rename( _file.filepath,_path,(err)=>{
+				if(err) return console.log( err );
+				console.log('file saved sucessfully');
+			});
+		}
+		
+		req.downloadFile = (_url,_path)=>{
+			if( _url.startsWith('http') ){
+				axios.get(_url,{responseType:'stream'})
+				.then( (response)=>{
+					let _newPath = fs.createWriteStream(_path);
+						response.data.pipe( _newPath );
+					console.log('file saved sucessfully');
+				}).catch( err=>console.log( err ) );
+			} else if( _url.startsWith('data:') ) {
+				const data = _url.split('base64,').pop();
+				fs.writeFile(_path, data, {encoding: 'base64'}, (err)=>{
+					if(err) return console.log( err );
+					console.log('file saved sucessfully');
+				});
+			} else { console.log('invalid URL: '+_url); }
+		}
+		
+		req.cleanTmp = ()=>{}
+		
+		res.send = ( _status, _data, _mimetype='html' )=>{
+			const mimeType = mollyJS.mimetype[ _mimetype ] || 'text/plain';
+			res.writeHead(_status, mollyJS.header( mimeType ));
+			res.end( _data ); return 0;
+		}
+		
+		res._404 = ()=>{
+			const mimeType = mollyJS.mimetype[ 'html' ];
+			res.writeHead(404, mollyJS.header( mimeType ));
+			res.end( mollyJS._404_() ); return 0;			
+		}
+		
+		res.json = ( _status,_obj ) =>{ res.send( _status, JSON.stringify(_obj) ); }
+		res.redirect = ( _url )=>{ res.writeHead(301, {'location':_url}); res.end(); }
+		
+		res.sendFile = ( _path )=>{			
+			if( fs.existsSync( _path ) ){
+				const _SIZE = fs.statSync( _path ).size;
+				for( var i in mollyJS.keys ){
+					let key = mollyJS.keys[i];
+					if( _path.endsWith( key ) ){
+						mollyJS.sendStaticFile( req,res,_path,_SIZE,mimeType[key] );
+						return 0;				
+					}
+				}	mollyJS.sendStaticFile( req,res,_path,_SIZE,'text/plain' );
+			} else { return res._404(); }
 		}
 		
 		//TODO: _main_ Function  XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX//
-		try{
-			const data = fs.readFileSync(`${mollyJS.back}/_main_.js`);
-			eval( `try{ ${data} } catch(e) {}` );
-		} catch(e) { }
+		try{ mollyJS.loadModule( req,res,`${mollyJS.back}/_main_.js` ); } catch(e) { }
 				
 		//TODO: Server Pages XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX//
-		if( req.parse.pathname=="/" ){
-			fs.readFile(`${mollyJS.front}/index.html`, (err,data)=>{
-				if (err) { return res.send( 404, mollyJS._404_() ); }
-				return res.send( 200,data ); 
-			});
-			
-		} else if( req.parse.pathname=="/_api" ) {
-			fs.readFile(`${__dirname}/package.json`, (err,data)=>{
-				if (err) { return res.send( 404, mollyJS._404_() ); }
-				return res.send( 200,data ); 
-			});
-			
-		} else if( fs.existsSync(`${mollyJS.front}${req.parse.pathname}.html`) ) {
-			const data = fs.readFileSync(`${mollyJS.front}${req.parse.pathname}.html`);
-			return res.send( 200,data ); 
-			
-		} else if( fs.existsSync(`${mollyJS.back}${req.parse.pathname}.js`) ) {
-			const data = fs.readFileSync(`${mollyJS.back}${req.parse.pathname}.js`);
-			eval(` try{ ${data} } catch(err) { console.log( err );
-				res.send( 404, 'something went wrong' );
-			}`);return 0;
-		}
-	
-		//TODO: Server Chunk XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX//
-		else{
+		if( req.parse.pathname=="/" )
+			return res.sendFile( `${mollyJS.front}/index.html` );
 		
-			const _URL = (`${mollyJS.front}${req.parse.pathname}`);
+		else if( fs.existsSync(`${mollyJS.front}${req.parse.pathname}.html`) )
+			return res.sendFile( `${mollyJS.front}${req.parse.pathname}.html` ); 
 			
-			if( fs.existsSync( _URL ) ){
-				const _SIZE = fs.statSync( _URL ).size;
-				for( var i in mollyJS.keys ){
-					if( req.parse.pathname.endsWith(mollyJS.keys[i]) ){
-						mollyJS.sendStaticFile( req,res,_URL,_SIZE,mimeType[mollyJS.keys[i]] );
-						return 0;
-					}
-				}	mollyJS.sendStaticFile( req,res,_URL,_SIZE,'text/plain' );
-			} else { return res.send( 404, mollyJS._404_() ); }
+		else if( fs.existsSync(`${mollyJS.back}${req.parse.pathname}.js`) )
+			return mollyJS.loadModule( req,res,`${mollyJS.back}${req.parse.pathname}.js` );
 			
-		}
+		else if( fs.existsSync(`${mollyJS.back}/${req.parse.params[req.parse.params.length-1]}.js`) ) 
+			return mollyJS.loadModule( req,res,`${mollyJS.back}/${req.parse.params[req.parse.params.length-1]}.js` );
+	
+		else 
+			return res.sendFile( `${mollyJS.front}${req.parse.pathname}` );
 			
+	}
+	
+	mollyJS.loadModule = function( req,res,_path ){
+		const data = fs.readFileSync( _path );
+		eval(` 
+			try{ ${data} 
+			} catch(err) { console.log( err );
+				res.send(404,'something went wrong');
+			}
+		`);
 	}
 	
 	mollyJS.sendStaticFile = function( req,res,url,size,mimeType ){
@@ -206,7 +262,7 @@ const mollyJS = function( front_path, back_path ){
 			const end = Math.min(chuck_size+start,size-1);
 			const chuck = fs.createReadStream( url,{start,end} );
 
-			res.writeHead(206, mollyJS.chunkheader( start,end,size,mimeType ));
+			res.writeHead(206, mollyJS.chunkheader( mimeType,start,end,size ));
 			chuck.pipe( res );
 		}
 	}

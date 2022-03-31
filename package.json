@@ -1,20 +1,27 @@
 {
-  	"name": "MollyJS",
-  	"version": "1.0.0",
-  	"node-remote": "*://*",
-  	"node-main": "main.js",
-  	"description": "MollyJS is a Framework for Backend",
-  	"scripts": {
-  	  	"start": "node main"
-  	},
-  	"keywords": [],
-  	"author": "Enmanuel Becerra",
-  	"dependencies": {
-  	  	"url": "^0.11.0",
-  	  	"http2": "^3.3.7",
-  	  	"axios": "^0.26.1",
-  	  	"dotenv": "^16.0.0",
-  	  	"fs": "^0.0.1-security",
-  	  	"http": "^0.0.1-security"
-  	}
+	"license": "MIT",
+	"version": "1.2.0",
+	"name": "Node-MollyJS",
+	"author": "Enmanuel Becerra",
+	"scripts": {
+		"start": "node main"
+	},
+	"description": "MollyJS is a Framework for Backend",
+	"keywords": [
+		"nodejs",
+		"backend-server",
+		"nodejs-backend",
+		"nodejs-http",
+		"nodejs-https",
+		"nodejs-http-server"
+	],
+	"dependencies": {
+		"axios": "^0.26.1",
+		"dotenv": "^16.0.0",
+		"formidable": "^2.0.1",
+		"fs": "^0.0.1-security",
+		"http": "^0.0.1-security",
+		"http2": "^3.3.7",
+		"url": "^0.11.0"
+	}
 }
